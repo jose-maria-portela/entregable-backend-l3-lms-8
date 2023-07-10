@@ -19,6 +19,8 @@ module.exports = (options) => {
     .post(
       middlewares.isLoggedIn,
       middlewares.hasRole('customer'),
+      OrderValidation.create,
+      middlewares.handleValidation,
       OrderController.create
     )
 

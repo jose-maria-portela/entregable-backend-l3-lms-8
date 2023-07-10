@@ -24,7 +24,7 @@ const checkOrderOwnership = async (req, res, next) => {
 // TODO: Implement the following function to check if the order belongs to current loggedIn customer (order.userId equals or not to req.user.id)
 const checkOrderCustomer = async (req, res, next) => {
   try {
-    const order = await Order.findByPk(req.params.orderId)
+    const order = await Order.findByPk(req.params.orderId, { attributes: ['userId'] })
     if (req.user.id === order.userId) {
       return next()
     } else {

@@ -2,6 +2,7 @@
 const models = require('../models')
 const Order = models.Order
 const Product = models.Product
+const OrderProducts = models.OrderProducts
 const Restaurant = models.Restaurant
 const User = models.User
 const moment = require('moment')
@@ -115,7 +116,54 @@ exports.indexCustomer = async function (req, res) {
 // 3. In order to save the order and related products, start a transaction, store the order, store each product linea and commit the transaction
 // 4. If an exception is raised, catch it and rollback the transaction
 exports.create = async function (req, res) {
+  const order = await Order.build(req.body)
+  order.userId = req.user.id
+  const transaction = await models.sequelize.transaction()
+  try {
+    const restaurant = await Restaurant.findByPk(order.restaurantId)
 
+    const price = await getPriceFromProducts(req.body.products, {transaction})
+    order.shippingCosts = price <= 10 ? restaurant.shippingCosts : 0
+    order.price = price + order.shippingCosts
+
+    let newOrder = await order.save({transaction})
+    await addRelationToOrderProducts(newOrder, req.body.products, { transaction })
+    newOrder = await Order.findByPk(newOrder.id, {
+      include: [{ model: Product, as: 'products' }],
+      transaction
+    })
+
+    await transaction.commit()
+    res.json(newOrder)
+  } catch (error) {
+    await transaction.rollback()
+    res.status(500).send(error)
+  }
+}
+
+const addRelationToOrderProducts = async (newOrder, products, { transaction }) => {
+  const productsAndQuantity = await getProductsAndQuantity(products, {transaction})
+  for(const {product, quantity} of productsAndQuantity){
+    await newOrder.addProduct(product, { through: { quantity: quantity, unityPrice: product.price }, transaction })
+  }
+}
+
+const getProductsAndQuantity = async (products, { transaction }) => {
+  const allProducts = []
+  for(const prod of products){
+    const thisProduct = await Product.findByPk(prod.productId, { transaction })
+    allProducts.push({ product: thisProduct, quantity: prod.quantity })
+  }
+  return allProducts
+}
+
+const getPriceFromProducts = async (products, {transaction}) => {
+  let price = 0
+  const productsQuantity = await getProductsAndQuantity(products, {transaction})
+  for(const prod of productsQuantity){
+    price += prod.product.price * prod.quantity
+  }
+  return price
 }
 
 // TODO: Implement the update function that receives a modified order and persists it in the database.
@@ -125,14 +173,47 @@ exports.create = async function (req, res) {
 // 3. In order to save the updated order and updated products, start a transaction, update the order, remove the old related OrderProducts and store the new product lines, and commit the transaction
 // 4. If an exception is raised, catch it and rollback the transaction
 exports.update = async function (req, res) {
+  // const order = await Order.build(req.body)
+  // order.userId = req.user.id
+  // const transaction = await models.sequelize.transaction()
+  // try {
+  //   const restaurant = await Restaurant.findByPk(order.restaurantId)
 
+  //   const price = await getPriceFromProducts(req.body.products, {transaction})
+  //   order.shippingCosts = price <= 10 ? restaurant.shippingCosts : 0
+  //   order.price = price + order.shippingCosts
+
+  //   let newOrder = await order.save({transaction})
+  //   await addRelationToOrderProducts(newOrder, req.body.products, { transaction })
+  //   newOrder = await Order.findByPk(newOrder.id, {
+  //     include: [{ model: Product, as: 'products' }],
+  //     transaction
+  //   })
+
+  //   await transaction.commit()
+  //   res.json(newOrder)
+  // } catch (error) {
+  //   await transaction.rollback()
+  //   res.status(500).send(error)
+  // }
 }
 
 // TODO: Implement the destroy function that receives an orderId as path param and removes the associated order from the database.
 // Take into account that:
 // 1. The migration include the "ON DELETE CASCADE" directive so OrderProducts related to this order will be automatically removed.
 exports.destroy = async function (req, res) {
-
+  try {
+    const result = await Order.destroy({ where: { id: req.params.orderId } })
+    let message = ''
+    if (result === 1) {
+      message = 'Sucessfuly deleted order id.' + req.params.orderId
+    } else {
+      message = 'Could not delete order.'
+    }
+    res.json(message)
+  } catch (err) {
+    res.status(500).send(err)
+  }
 }
 
 exports.confirm = async function (req, res) {
