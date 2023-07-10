@@ -19,6 +19,18 @@ const checkOrderPending = async (value, { req }) => {
     return Promise.reject(err)
   }
 }
+const checkOrderInPendingState = async (value, { req }) => {
+  try {
+    const order = await Order.findByPk(req.params.orderId)
+    if (order.status !== 'pending') {
+      return Promise.reject(new Error(`The order numer ${order.id} cannot be deleted because it isn't in pending state.`))
+    } else {
+      return Promise.resolve()
+    }
+  } catch (error) {
+    return Promise.reject(new Error(`The order numer ${order.id} cannot be deleted because it isn't in pending state.`))
+  }
+}
 const checkOrderCanBeSent = async (value, { req }) => {
   try {
     const order = await Order.findByPk(req.params.orderId,
@@ -110,9 +122,7 @@ module.exports = {
   // 3. Check that products are available
   // 4. Check that all the products belong to the same restaurant
   create: [
-    check('restaurantId').exists().custom((value, { req }) => {
-      return checkRestaurantExists(value)
-    }),
+    check('restaurantId').exists().custom(checkRestaurantExists),
     check('products').notEmpty().custom((value, { req }) => {
       return checkMinValueOfProducts(value, req.body.products)
     }),
@@ -134,7 +144,7 @@ module.exports = {
   ],
   // TODO: Include validation rules for destroying an order that should check if the order is in the 'pending' state
   destroy:[
-
+    check('status').custom(checkOrderInPendingState)
   ],
   confirm: [
     check('startedAt').custom(checkOrderPending)
