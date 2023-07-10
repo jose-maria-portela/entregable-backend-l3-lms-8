@@ -173,29 +173,29 @@ const getPriceFromProducts = async (products, {transaction}) => {
 // 3. In order to save the updated order and updated products, start a transaction, update the order, remove the old related OrderProducts and store the new product lines, and commit the transaction
 // 4. If an exception is raised, catch it and rollback the transaction
 exports.update = async function (req, res) {
-  // const order = await Order.build(req.body)
-  // order.userId = req.user.id
-  // const transaction = await models.sequelize.transaction()
-  // try {
-  //   const restaurant = await Restaurant.findByPk(order.restaurantId)
+  const order = await Order.findByPk(req.params.orderId)
+  const transaction = await models.sequelize.transaction()
+  try {
+    const restaurant = await Restaurant.findByPk(order.restaurantId)
+    const price = await getPriceFromProducts(req.body.products, {transaction})
+    order.shippingCosts = price <= 10 ? restaurant.shippingCosts : 0
+    order.price = price + order.shippingCosts
+    order.address = req.body.address
 
-  //   const price = await getPriceFromProducts(req.body.products, {transaction})
-  //   order.shippingCosts = price <= 10 ? restaurant.shippingCosts : 0
-  //   order.price = price + order.shippingCosts
+    await Order.update(order.toJSON(), {where: {id: order.id}, transaction})
+    await order.setProducts([], { transaction }) // Eliminamos los productos que teníamos antes
+    await addRelationToOrderProducts(order, req.body.products, { transaction })
+    const newOrder = await Order.findByPk(order.id, {
+      include: [{ model: Product, as: 'products' }],
+      transaction
+    })
 
-  //   let newOrder = await order.save({transaction})
-  //   await addRelationToOrderProducts(newOrder, req.body.products, { transaction })
-  //   newOrder = await Order.findByPk(newOrder.id, {
-  //     include: [{ model: Product, as: 'products' }],
-  //     transaction
-  //   })
-
-  //   await transaction.commit()
-  //   res.json(newOrder)
-  // } catch (error) {
-  //   await transaction.rollback()
-  //   res.status(500).send(error)
-  // }
+    await transaction.commit()
+    res.json(newOrder)
+  } catch (error) {
+    await transaction.rollback()
+    res.status(500).send(error)
+  }
 }
 
 // TODO: Implement the destroy function that receives an orderId as path param and removes the associated order from the database.

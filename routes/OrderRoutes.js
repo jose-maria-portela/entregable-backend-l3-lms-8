@@ -64,7 +64,13 @@ module.exports = (options) => {
       middlewares.checkOrderVisible,
       OrderController.show)
     .put(
-
+      middlewares.isLoggedIn,
+      middlewares.hasRole('customer'),
+      middlewares.checkEntityExists(Order, 'orderId'),
+      middlewares.checkOrderCustomer,
+      OrderValidation.update,
+      middlewares.handleValidation,
+      OrderController.update
     )
     .delete(
       middlewares.isLoggedIn,

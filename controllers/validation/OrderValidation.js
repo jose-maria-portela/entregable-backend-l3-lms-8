@@ -101,20 +101,25 @@ const checkProductsAreAvailable = async (productsBody) => {
   }
   return Promise.resolve()
 }
-
 const checkProductsBelongToSameRestaurant = async (productsBody, restaurantIdOfOrder) => {
   const allRestaurantIds = []
   for (const { productId } of productsBody) {
     const product = await Product.findByPk(productId, { attributes: ['restaurantId'] })
     allRestaurantIds.push(product.restaurantId)
   }
+
   if (allRestaurantIds.filter( id => id === restaurantIdOfOrder).length < allRestaurantIds.length) {
     return Promise.reject(new Error('The products must belong to the same restaurant.'))
   } else {
     return Promise.resolve()
   }
 }
-
+const checkProductsBelongToSameRestaurantForUpdate = async (productsBody, orderId) => {
+  // Estos pasos son necesarios para que de bien para el update, en el cuál no está el req.body.restaurantId
+  const originalOrder = await Order.findByPk(orderId, { attributes: ['restaurantId'] })
+  const restaurantId = originalOrder.restaurantId
+  checkProductsBelongToSameRestaurant(productsBody, restaurantId)
+}
 module.exports = {
   // TODO: Include validation rules for create that should:
   // 1. Check that restaurantId is present in the body and corresponds to an existing restaurant
@@ -140,7 +145,17 @@ module.exports = {
   // 4. Check that all the products belong to the same restaurant of the originally saved order that is being edited.
   // 5. Check that the order is in the 'pending' state.
   update: [
-
+    check('restaurantId').not().exists().withMessage('There must not be a restaurantId in the body.'),
+    check('products').notEmpty().custom((value, { req }) => {
+      return checkMinValueOfProducts(value, req.body.products)
+    }),
+    check('products').custom((value, { req }) => {
+      return checkProductsAreAvailable(req.body.products)
+    }),
+    check('products').custom((value, { req }) => {
+      return checkProductsBelongToSameRestaurantForUpdate(req.body.products, req.params.orderId)
+    }),
+    check('status').custom(checkOrderInPendingState)
   ],
   // TODO: Include validation rules for destroying an order that should check if the order is in the 'pending' state
   destroy:[
