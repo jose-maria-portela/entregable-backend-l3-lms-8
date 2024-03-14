@@ -1,0 +1,25 @@
+# This is a basic workflow that is manually triggered
+
+name: SonarQube Analysis
+
+on:
+  push:
+    branches:
+      - main # the name of your main branch
+  pull_request:
+    types: [opened, synchronize, reopened]
+jobs:
+  build:
+    name: Build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install SonarQube Scanner
+        uses: SonarSource/sonar-scanner-action@v1
+
+      - name: Run SonarQube Analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONARQUBE_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        run: sonar-scanner
