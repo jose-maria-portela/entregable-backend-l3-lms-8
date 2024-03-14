@@ -11,7 +11,8 @@
     "passport": "^0.6.0",
     "passport-http-bearer": "^1.0.1",
     "sequelize": "^6.28.0",
-    "sequelize-cli": "^6.5.2"
+    "sequelize-cli": "^6.5.2",
+    "sonarqube-scanner": "^3.3.0"
   },
   "scripts": {
     "start": "nodemon --ignore ./example_api_client/ backend.js",

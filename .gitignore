@@ -106,3 +106,9 @@ dist
 public/avatars/*
 public/restaurantImages/*
 public/restaurants/*
+
+# sonar
+.scannerwork
+sonarqube/extensions
+sonarqube/data
+sonarqube/logs
