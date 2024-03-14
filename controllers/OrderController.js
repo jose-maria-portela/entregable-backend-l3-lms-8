@@ -8,6 +8,8 @@ const User = models.User
 const moment = require('moment')
 const { Op } = require('sequelize')
 
+// Cambio insignificante para probar pull-request y sonarqube
+
 const generateFilterWhereClauses = function (req) {
   const filterWhereClauses = []
   if (req.query.status) {
