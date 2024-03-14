@@ -20,6 +20,3 @@ jobs:
         fetch-depth: 0
     - name: SonarQube Scan
       run: sonarscan.js
-      with:
-        host: ${{ secrets.SONAR_HOST_URL }}
-        login: ${{ secrets.SONAR_TOKEN }}
