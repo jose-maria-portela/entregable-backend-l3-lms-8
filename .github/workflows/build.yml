@@ -19,6 +19,4 @@ jobs:
         # Disabling shallow clone is recommended for improving relevancy of reporting
         fetch-depth: 0
     - name: SonarQube Scan
-      run: |
-        npm install
-        node ./sonarscan.js
+      run: sonar-scanner
