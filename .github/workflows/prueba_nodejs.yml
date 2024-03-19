@@ -1,30 +1,22 @@
 name: SonarQube Scan2.0
-
-on:
- # Trigger analysis when finishing a pull request.
- pull_request:
-   branch: "main"
-   types: [closed]
+on: # Trigger analysis when finishing a pull request.
+  pull_request:
+    branch: "main"
+    types: [closed]
 
 jobs:
   sonarqube:
-   name: SonarQube Trigger
-   runs-on: windows-latest
-   strategy:
-     matrix:
-       node-version: [14.x, 16.x, 18.x]
- 
-   steps:
-   - uses: actions/checkout@v3
-   - name: Use Node.js ${{ matrix.node-version }}
-     uses: actions/setup-node@v3
-     with:
-       node-version: ${{ matrix.node-version }}
-       cache: 'npm'
-   - name: Checking out
-     uses: actions/checkout@master
-     with:
-     # Disabling shallow clone is recommended for improving relevancy of reporting
-      fetch-depth: 0
-   - name: SonarQube Scan
-     run: node ./sonarscan.js
+    name: SonarQube Trigger
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          cache: 'npm'
+      - name: Install sonar-scanner
+        run: npm install sonarqube-scanner
+      - name: SonarQube Scan
+        run: node ./sonarscan.js
