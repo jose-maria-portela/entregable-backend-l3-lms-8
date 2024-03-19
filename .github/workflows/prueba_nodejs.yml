@@ -7,24 +7,24 @@ on:
    types: [closed]
 
 jobs:
- sonarqube:
-  name: SonarQube Trigger
-  runs-on: windows-latest
-  strategy:
-    matrix:
-      node-version: [14.x, 16.x, 18.x]
-
-  steps:
-  - uses: actions/checkout@v3
-  - name: Use Node.js ${{ matrix.node-version }}
-    uses: actions/setup-node@v3
-    with:
-      node-version: ${{ matrix.node-version }}
-      cache: 'npm'
-  - name: Checking out
-    uses: actions/checkout@master
-    with:
-    # Disabling shallow clone is recommended for improving relevancy of reporting
-    fetch-depth: 0
-  - name: SonarQube Scan
-    run: node ./sonarscan.js
+  sonarqube:
+   name: SonarQube Trigger
+   runs-on: windows-latest
+   strategy:
+     matrix:
+       node-version: [14.x, 16.x, 18.x]
+ 
+   steps:
+   - uses: actions/checkout@v3
+   - name: Use Node.js ${{ matrix.node-version }}
+     uses: actions/setup-node@v3
+     with:
+       node-version: ${{ matrix.node-version }}
+       cache: 'npm'
+   - name: Checking out
+     uses: actions/checkout@master
+     with:
+     # Disabling shallow clone is recommended for improving relevancy of reporting
+      fetch-depth: 0
+   - name: SonarQube Scan
+     run: node ./sonarscan.js
